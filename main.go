@@ -12,11 +12,11 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/shxsun/go-sh"
 	"io"
 	"io/ioutil"
@@ -24,10 +24,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
-	//"sync"
-	"encoding/json"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // Golang FormatTime: 20060102 15:04:05
@@ -240,9 +239,12 @@ func getAllData() {
 }
 
 func Exist(filename string) bool {
+	_, err := os.Stat(filename)
+	if err != nil && os.IsNotExist(err) {
+		return false
+	}
 
-	err := syscall.Access(filename, syscall.F_OK)
-	return err == nil
+	return true
 }
 
 func download(url string) {
@@ -320,7 +322,7 @@ func todayData() string {
 }
 
 func QuerryData(table string) *sql.Rows {
-	db, err := sql.Open("sqlite3", "./main.db")
+	db, err := sql.Open("mysql", "user:password@/dbname")
 	checkErr(err)
 
 	rows, err := db.Query("SELECT * FROM " + table)
@@ -367,7 +369,7 @@ func QueryPageData(index int) string {
 
 func writeToDB(table string, id int, data string) {
 
-	db, err := sql.Open("sqlite3", "./main.db")
+	db, err := sql.Open("mysql", "user:password@/dbname")
 	checkErr(err)
 
 	stmt, err := db.Prepare("REPLACE INTO " + table + "(id, data) values(?,?)")
